@@ -9,6 +9,7 @@ public:
 	static void FixMouseWheel();
 	static void Chinese();
 	static void LongQuickSlot();
+	static bool longQuickSlot;
 	static void FixDateFormat();
 	static void FixItemType();
 	static void JumpCap();

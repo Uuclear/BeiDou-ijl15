@@ -18,6 +18,7 @@ double Client::setAtkOutCap = 199999; // 输出显示上限
 bool Client::useTubi = false; // 使用Tubi功能
 bool Client::bigLoginFrame = false; // 大型登录框
 bool Client::SwitchChinese = false; // 切换中文模式
+bool Client::longQuickSlot = false; // 长键盘快捷键（26槽），false 为原版 8 槽
 int Client::speedMovementCap = 140; // 移动速度上限
 bool Client::noPassword = false; // 无密码模式
 bool Client::debug = false; // 调试模式
@@ -772,6 +773,8 @@ void Client::Chinese() {
 }
 
 void Client::LongQuickSlot() {
+	if (!longQuickSlot)
+		return;
 	// CUIStatusBar::OnCreate
 	Memory::WriteByte(0x008D155C + 1, 0xF0); // Draw rest of quickslot bar
 	Memory::WriteByte(0x008D155C + 2, 0x03);

@@ -1,0 +1,29 @@
+name: Build Release Win32
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - BeiDou
+      - 'cursor/**'
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Build
+        run: msbuild ezorsia.sln /p:Configuration=Release /p:Platform=x86 /m
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ijl15-release-win32
+          path: |
+            out/Release/ijl15.dll
+            ezorsia/config.ini

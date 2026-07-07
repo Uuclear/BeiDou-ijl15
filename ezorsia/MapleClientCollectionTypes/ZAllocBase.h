@@ -1,4 +1,7 @@
 #pragma once
+// ZAllocBase：内存分配器基类，提供固定大小内存块的批量分配与释放。
+// 定义 BLOCK16/32/64/128 等内存池块尺寸枚举。
+// 通过 Windows 堆 API 管理原始内存块链表。
 //credits to the creators of https://github.com/MapleStory-Archive/MapleClientEditTemplate
 class ZAllocBase
 {

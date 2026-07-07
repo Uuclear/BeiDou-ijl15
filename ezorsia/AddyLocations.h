@@ -1,4 +1,16 @@
 #pragma once
+// ============================================================================
+// AddyLocations.h - v83 客户端内存地址常量表
+// ============================================================================
+// 本文件集中定义 MapleStory v83 客户端中各类补丁、代码洞（codecave）跳转、
+// NOP 填充及 Hook 注入所需的硬编码内存地址（RVA）。
+// 每个 const DWORD 对应客户端 exe 内的一处指令或数据引用位置；
+// 配套的 Retn / NOPs 常量则用于代码洞补丁的返回地址与需 NOP 的字节数。
+// 修改客户端逻辑时请在本文件查找对应功能的地址，勿随意改动数值。
+// ============================================================================
+
+// ===== 通用游戏逻辑补丁 =====
+// DInput 注入、移动刷新、聊天延迟、封包加密、技能限制等杂项补丁地址
 const DWORD dwDInput8DLLInject = 0x00796357; 
 const DWORD dwMovementFlushInterval = 0x0068A83F;
 const DWORD dwStatWndOnStatChange = 0x00A20213;
@@ -23,7 +35,8 @@ const DWORD dwUnlimitedFJYVector = 0x0096BF86;
 //skill tooltip extension x 008F26F3/008F26F8 y //ty rynyan
 //item UI tooltip extension 008EEEAF //ty rain
 
-// ===== Resolution Modifications =====
+// ===== 分辨率与 UI 布局修改 =====
+// 窗口尺寸、视口、光标/工具提示边界、快捷栏、临时状态图标等坐标硬编码位置
 const DWORD dwByteAvatarMegaHPos = 0x0045B97E;
 const DWORD dwAvatarMegaWidth = 0x0045A5CB;
 const DWORD dwApplicationHeight = 0x009F7B1D;
@@ -50,9 +63,15 @@ const DWORD dwQuickSlotCWndVPos = 0x008DE8EE;
 const DWORD dwQuickSlotCWndHPos = 0x008DE8E5;
 const DWORD dwViewPortHeight = 0x009DFCF0;
 const DWORD dwViewPortWidth = 0x009DFE68;
+
+// ===== Boss 血条（BossBar）位置修正 =====
+// 高分辨率下 Boss 名称/血条 Y 坐标与服务器公告栏的代码洞注入点
 const DWORD dwBossBar = 0x00533B0E;
 const DWORD dwBossBarRetn = 0x00533B15;
 const DWORD dwBossBarRetn2 = 0x007E16A1;
+
+// ===== 现金商城（Cash Shop）主画布修正 =====
+// 非 800x600 分辨率下商城 UI 画布偏移的代码洞地址
 const DWORD dwCashFix = 0x00469348;
 const DWORD dwCashFixRtm = 0x0046934E;
 const DWORD dwVersionNumberFix = 0x005F464D;
@@ -66,6 +85,8 @@ const int dwAlwaysViewRestoreFixNOPs = 7;
 //const DWORD dwloginFrameFixCall = 0x009DE4D2;
 //const int loginFrameFixNOPs = 5;
 
+// ===== 登录流程 UI 修复（选角/背景/描述符） =====
+// 登录界面背景画布、视图矩形、描述文本及按钮布局的代码洞与 NOP 补丁
 const DWORD dwLoginBackCanvasFix = 0x0060E1BF;
 const DWORD dwLoginBackCanvasFixRetn = 0x0060E1CA;
 const int LoginBackCanvasFixNOPs = 11;
@@ -84,6 +105,8 @@ const DWORD dwLoginDescriptorFix = 0x0060D85B;
 const DWORD dwLoginDescriptorFixRetn = 0x0060D88E;
 const int LoginDescriptorFixNOPs = 51;
 
+// ===== 获取物品/经验提示消息 UI =====
+// 屏幕中央掉落/经验飘字的位置与淡出动画相关补丁
 const DWORD dwMoreGainMsgs = 0x0089B185;
 const DWORD dwMoreGainMsgsRetn = 0x0089B18B;
 const int MoreGainMsgsNOPs = 6;
@@ -96,6 +119,8 @@ const DWORD dwMoreGainMsgsFade1 = 0x0089B4E6;
 const DWORD dwMoreGainMsgsFade1Retn = 0x0089B4EB;
 const int MoreGainMsgsFade1NOPs = 5;
 
+// ===== Murueng RAID（穆伦格）活动 UI 布局 =====
+// 副本内玩家信息、计时器、怪物计数、能量条等 UI 元素的位置修正
 const DWORD dwMuruengraidPlayer = 0x00554041;
 const DWORD dwMuruengraidPlayerRetn = 0x00554049;
 const int MuruengraidPlayerNOPs = 8;
@@ -152,11 +177,15 @@ const DWORD dwMuruengraidMonster1_2 = 0x00554BA3;
 const DWORD dwMuruengraidMonster1_2Retn = 0x00554BA8;
 const int MuruengraidMonster1_2NOPs = 5;
 
+// ===== 属性窗口（Stat Window）子窗口移动 =====
 const DWORD dwStatsSubMov = 0x008C5112;
 const DWORD dwStatsSubMovRetn = 0x008C5117;
 const int StatsSubMovNOPs = 5;
 
-//beginning of packed client run addies //CwvsAppSetup?? //CWvsAppInitializeInput?? //CWvsAppCallUpdate?? //CClientSocketConnect??
+// ===== 加壳客户端 CRC 绕过 / 运行时 Hook 地址 =====
+// 打包/加壳 v83 客户端在 CwvsApp 初始化、登录、网络连接等流程中的
+// 校验跳转点；配合 codecave 重定向以绕过 CRC 检测
+// CwvsAppSetup / CWvsAppInitializeInput / CWvsAppCallUpdate / CClientSocketConnect 等
 const DWORD dwCLoginSendCheckPasswordPacket = 0x005F6994;
 const DWORD dwCLoginSendCheckPasswordPacketRetn = 0x005F6B5D;
 const int CLoginSendCheckPasswordPacketNops = 6;
@@ -369,7 +398,8 @@ const int dw0x00A4BE47Nops = 18;
 //0x0044E550 //0x0044E5DB //0x0044E71D //0x0044E8B4 //0x0044EA6F //0x0044ECA1 //0x0044ED52 //0x00494D3B //0x00494EEC //0x009F4E84
 //0x009F4F12 //0x009F503C //0x009F526F //0x009F6F36 //0x009F7CFA //0x009F84E9 //0x00A4BDFE //0x00A4BD99 //0x00A4BD05 //0x00A4BB39
 
-//my cash shop fix
+// ===== 现金商城（Cash Shop）多控件位置修正 =====
+// 商城内各子面板、预览页及 ITC 交易行的独立代码洞地址与返回点
 const DWORD dwCashFix1 = 0x00469414;
 const DWORD dwCashFix1Rtm = 0x00469420;
 const DWORD dwITCFix1Rtm = 0x0059E9ED;
@@ -411,14 +441,16 @@ const DWORD dwCashFixPrev = 0x004AB10F;
 const DWORD dwCashFixPrevRtm = 0x004AB11D;
 const int dwCashFixPrevNOPs = 14;
 
-// ===== Unlimited Teleport =====
+// ===== 无限瞬移（Unlimited Teleport） =====
+// 移除地图传送距离、更新时间、 foothold 及传送门检测限制
 const DWORD dwTeleFieldLimit = 0x00957BB7;
 const DWORD dwTeleUpdateTime = 0x00957BFE;
 const DWORD dwTeleFootholdAbove = 0x00957EFC;
 const DWORD dwTeleFootholdBelow = 0x00957ED9;
 const DWORD dwTeleIsPortal = 0x00957C25;
 
-// ===== Status Bar =====
+// ===== 状态栏（Status Bar）位置修正 =====
+// 聊天状态栏本体、背景条及输入框的垂直坐标代码洞
 const DWORD dwStatusBarVPos = 0x008CFD55;
 const DWORD dwStatusBarPosRetn = 0x008CFD5A;
 
@@ -428,7 +460,8 @@ const DWORD dwStatusBarBackgroundPosRetn = 0x008D1F6A;
 const DWORD dwStatusBarInputVPos = 0x008D217C;
 const DWORD dwStatusBarInputPosRetn = 0x008D2185;
 
-// ===== Login Screen =====
+// ===== 登录界面控件布局（Login Screen） =====
+// 登录对话框、用户名/密码输入框及按钮颜色的坐标与样式补丁
 const DWORD dwLoginCreateDlg = 0x006203E8;
 const DWORD dwLoginCreateDlgRtn = 0x006203F6;
 

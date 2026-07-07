@@ -1,4 +1,6 @@
 #pragma once
+// ZRecyclable：可回收对象基类模板，重载 new/delete 使用对象池分配。
+// 派生类通过 ZRecyclableAvBuffer 复用内存，减少频繁堆分配开销。
 #include "ZRecyclableAvBuffer.h"
 //credits to the creators of https://github.com/MapleStory-Archive/MapleClientEditTemplate
 template <typename Type, size_t Size, typename Value>

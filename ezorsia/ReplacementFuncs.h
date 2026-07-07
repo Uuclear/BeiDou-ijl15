@@ -1,4 +1,12 @@
 #pragma once
+// ============================================================================
+// ReplacementFuncs.h - 客户端函数替换 Hook 入口
+// ============================================================================
+// 封装 Memory::SetHook 调用的各类 Hook 安装/卸载函数。
+// 包含 Windows API Hook（多开、窗口创建）、客户端内部函数 Hook（WZ 资源管理、
+// 字符串池汉化等）。与 codecaves.h 中的裸汇编代码洞互补：
+// 函数替换适用于需拦截完整调用链的场景，代码洞适用于单点指令/参数修改。
+// ============================================================================
 #include "AutoTypes.h"
 
 static bool ownLoginFrame;
@@ -15,6 +23,8 @@ static bool EzorsiaV2WzIncluded;
 //it would be the best way to do it for very extensive client edits and if you need to replace entire functions in that context but
 //code caving is generally easier for short term, one-time patchwork fixes	//thanks you teto for helping me on this learning journey
 
+// HookGetModuleFileName - Hook kernel32!GetModuleFileNameW
+// 当传入模块句柄无效导致返回长度为 0 时，改用 nullptr 重试以获取正确 exe 路径
 bool HookGetModuleFileName(bool bEnable) {
 	static decltype(&GetModuleFileNameW) _GetModuleFileNameW = &GetModuleFileNameW;
 
@@ -31,6 +41,8 @@ bool HookGetModuleFileName(bool bEnable) {
 	return Memory::SetHook(bEnable, reinterpret_cast<void**>(&_GetModuleFileNameW), GetModuleFileNameW_Hook);
 }
 
+// HookCreateWindowExA - Hook user32!CreateWindowExA
+// 为客户端主窗口启用最小化按钮（WS_MINIMIZEBOX），并将窗口居中偏上显示
 /// <summary>
 /// Creates a detour for the User32.dll CreateWindowExA function applying the following changes:
 /// 1. Enable the window minimize box
@@ -46,6 +58,8 @@ inline void HookCreateWindowExA(bool bEnable) {
 	Memory::SetHook(bEnable, reinterpret_cast<void**>(&create_window_ex_a), hook);
 }
 
+// GetFuncAddress - 动态加载 DLL 并解析导出函数地址
+// 用于在运行时获取 kernel32 等系统 API 地址；多开 Hook 依赖此函数提前解析 CreateMutexA
 DWORD GetFuncAddress(LPCSTR lpModule, LPCSTR lpFunc)	//ty alias!			//multiclient, not currently working, likely cannot hook early enough with nmconew.dll
 {
 	HMODULE mod = LoadLibraryA(lpModule);
@@ -69,6 +83,8 @@ DWORD GetFuncAddress(LPCSTR lpModule, LPCSTR lpFunc)	//ty alias!			//multiclient
 	return address;
 }
 
+// Hook_CreateMutexA - Hook kernel32!CreateMutexA，移除 WvsClientMtx 多开互斥锁检测
+// 当互斥体名称包含 "WvsClientMtx" 时返回伪造句柄 0x0BADF00D，允许同时运行多个客户端
 bool Hook_CreateMutexA(bool bEnable)	//ty darter	//ty angel!
 {
 	static auto _CreateMutexA = decltype(&CreateMutexA)(GetFuncAddress("KERNEL32", "CreateMutexA"));
@@ -105,39 +121,53 @@ bool Hook_CreateMutexA(bool bEnable)	//ty darter	//ty angel!
 //{
 //	return Memory::SetHook(bEnable, reinterpret_cast<void**>(&_com_ptr_t_IWzProperty__dtor), _com_ptr_t_IWzProperty__dtor_Hook);
 //}
+
+// ===== IWz* COM 对象创建 Hook 包装 =====
+// 安装/卸载 PcCreateObject 对 ResMan、NameSpace、FileSystem 的函数替换 Hook
+
+// Hook ResMan 资源管理器 COM 对象创建
 bool HookPcCreateObject_IWzResMan(bool bEnable)
 {
 	return Memory::SetHook(bEnable, reinterpret_cast<void**>(&_PcCreateObject_IWzResMan), _PcCreateObject_IWzResMan_Hook);
 }
+// Hook NameSpace 命名空间 COM 对象创建
 bool HookPcCreateObject_IWzNameSpace(bool bEnable)
 {
 	return Memory::SetHook(bEnable, reinterpret_cast<void**>(&_PcCreateObject_IWzNameSpace), _PcCreateObject_IWzNameSpace_Hook);
 }
+// Hook FileSystem 文件系统 COM 对象创建
 bool HookPcCreateObject_IWzFileSystem(bool bEnable)
 {
 	return Memory::SetHook(bEnable, reinterpret_cast<void**>(&_PcCreateObject_IWzFileSystem), _PcCreateObject_IWzFileSystem_Hook);
 }
+// Hook 路径反斜杠转斜杠
 bool HookCWvsApp__Dir_BackSlashToSlash(bool bEnable)
 {
 	return Memory::SetHook(bEnable, reinterpret_cast<void**>(&_CWvsApp__Dir_BackSlashToSlash), _CWvsApp__Dir_BackSlashToSlash_Hook);
 }
+// Hook 路径向上一级目录
 bool HookCWvsApp__Dir_upDir(bool bEnable)
 {
 	return Memory::SetHook(bEnable, reinterpret_cast<void**>(&_CWvsApp__Dir_upDir), _CWvsApp__Dir_upDir_Hook);
 }
+// Hook BSTR 构造函数
 bool Hookbstr_ctor(bool bEnable)
 {
 	return Memory::SetHook(bEnable, reinterpret_cast<void**>(&_bstr_ctor), _bstr_ctor_Hook);
 }
+// Hook IWzFileSystem::Init 文件系统初始化
 bool HookIWzFileSystem__Init(bool bEnable)
 {
 	return Memory::SetHook(bEnable, reinterpret_cast<void**>(&_IWzFileSystem__Init), _IWzFileSystem__Init_Hook);
 }
+// Hook IWzNameSpace::Mount 命名空间挂载
 bool HookIWzNameSpace__Mount(bool bEnable)
 {
 	return Memory::SetHook(bEnable, reinterpret_cast<void**>(&_IWzNameSpace__Mount), _IWzNameSpace__Mount_Hook);
 }
 //#pragma optimize("", off)
+// Hook CWvsApp::InitializeResMan - 资源管理器总初始化入口
+// 当前 Hook 仅透传原逻辑；注释块内为从 .img 文件夹加载资源的实验性重写代码
 bool HookCWvsApp__InitializeResMan(bool bEnable)	//resman hook that does nothing, kept for analysis and referrence //not skilled enough to rewrite to load custom wz files
 {
 	static _CWvsApp__InitializeResMan_t _CWvsApp__InitializeResMan_Hook = [](void* pThis, void* edx) {
@@ -193,6 +223,8 @@ bool HookCWvsApp__InitializeResMan(bool bEnable)	//resman hook that does nothing
 	return Memory::SetHook(bEnable, reinterpret_cast<void**>(&_CWvsApp__InitializeResMan), _CWvsApp__InitializeResMan_Hook);
 }
 //#pragma optimize("", on)
+
+// --- 中文汉化：StringPool 索引 → 替换文本映射表 ---
 struct KeyValuePair {
 	int key;
 	std::string value;
@@ -2113,6 +2145,7 @@ KeyValuePair newKeyValuePairs[] = {
     {5617, "和 \r"},
     {5639, " 金币"},
 };
+// Hook StringPool::GetString：按索引查表替换为中文文案，并覆盖窗口标题（1163 → "BeiDou"）。
 bool Hook_StringPool__GetString(bool bEnable)	//hook stringpool modification //ty !! popcorn //ty darter
 {
 	_StringPool__GetString_t _StringPool__GetString_Hook = [](void* pThis, void* edx, ZXString<char>* result, unsigned int nIdx, char formal) ->  ZXString<char>*
@@ -2202,6 +2235,7 @@ void* __fastcall _lpfn_NextLevel_Hook(int expTable[maxLevelForCustomEXP])	 //you
 //	expTable[200] = 0;	//you need a MAX_INT checker for exp if you have levels over 200 and are not using a predefined array
 //	return expTable;
 //}
+// Hook 经验表查表函数 _lpfn_NextLevel（当前为透传，保留自定义经验曲线扩展点）。
 bool Hook_lpfn_NextLevel(bool bEnable)
 {
 	return Memory::SetHook(bEnable, reinterpret_cast<void**>(&_lpfn_NextLevel), _lpfn_NextLevel_Hook);

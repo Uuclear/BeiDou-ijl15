@@ -1,4 +1,7 @@
 #pragma once
+// ZAllocStrSelector：专为 ZXString 定制的 ZAllocEx 块大小选择器。
+// 块大小计入字符数组与 _ZXStringData 头结构所需空间。
+// 供字符串对象专用内存池使用。
 #include "ZAllocBase.h"
 #include "ZXString.h"
 //credits to the creators of https://github.com/MapleStory-Archive/MapleClientEditTemplate

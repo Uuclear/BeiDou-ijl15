@@ -1,4 +1,6 @@
 #pragma once
+// ZRecyclableStatic：可回收缓冲区的静态回调注册表。
+// 通过 CallBack 链表维护各 ZRecyclableAvBuffer 实例的生命周期回调。
 //credits to the creators of https://github.com/MapleStory-Archive/MapleClientEditTemplate
 class ZFakeStatAvBuff { };
 

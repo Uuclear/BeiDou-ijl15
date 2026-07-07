@@ -1,4 +1,7 @@
 #pragma once
+// TSecType 安全类型模板：对游戏数据进行加密存储与校验，防止内存篡改。
+// 包含 TSecData 与 TSecType，模拟 Nexon 客户端内部的安全数值封装。
+// 数据与密钥、校验和一并存放，读写时自动加解密。
 #include <Windows.h>
 //credits to the creators of https://github.com/MapleStory-Archive/MapleClientEditTemplate
 /*

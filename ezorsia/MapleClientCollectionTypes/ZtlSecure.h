@@ -1,4 +1,6 @@
 #pragma once
+// ZtlSecure：客户端安全内存撕裂/加密例程（ZtlSecureTear 等）。
+// 对敏感数据进行 XOR 加密、旋转与校验和验证，防止简单内存扫描。
 #include <Windows.h>
 #include <condition_variable>
 //credits to the creators of https://github.com/MapleStory-Archive/MapleClientEditTemplate

@@ -1,4 +1,6 @@
 #pragma once
+// ZList：双向链表模板，继承 ZRefCountedAccessor 以支持引用计数节点。
+// 提供头尾插入删除、遍历及与 ZRef 智能指针的互操作。
 #include "ZRefCountedAccessor.h"
 #include "ZRefCountedDummy.h"
 //credits to the creators of https://github.com/MapleStory-Archive/MapleClientEditTemplate

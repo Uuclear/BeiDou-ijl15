@@ -1,4 +1,6 @@
 #pragma once
+// ZRef：智能指针式引用包装，管理 ZRefCounted 或经 ZRefCountedDummy 包装的对象。
+// 自动维护引用计数，拷贝/赋值时增减计数并在归零时释放对象。
 #include "ZRefCounted.h"
 #include "ZRefCountedDummy.h"
 #include "ZRefCountedAccessor.h"

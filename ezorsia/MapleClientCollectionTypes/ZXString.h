@@ -1,4 +1,7 @@
 #pragma once
+// ZXString：Nexon 字符串模板，封装 char/wchar_t 动态字符串。
+// 内嵌 _ZXStringData 头，通过 ZAllocEx<ZAllocStrSelector> 分配与释放内存。
+// 行为类似 BSTR，可与客户端 ZXString 对象二进制兼容传递。
 #include "ZAllocEx.h"
 //credits to the creators of https://github.com/MapleStory-Archive/MapleClientEditTemplate
 template<typename T> struct ZAllocEx;

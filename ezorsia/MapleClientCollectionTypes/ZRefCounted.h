@@ -1,4 +1,6 @@
 #pragma once
+// ZRefCounted：引用计数基类，提供 m_nRef 及双向链表指针 m_pPrev/m_pNext。
+// 供 ZRef、ZList 等容器与智能指针系统使用。
 //credits to the creators of https://github.com/MapleStory-Archive/MapleClientEditTemplate
 class ZRefCounted
 {

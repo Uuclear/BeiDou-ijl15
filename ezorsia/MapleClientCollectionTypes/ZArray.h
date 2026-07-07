@@ -1,4 +1,6 @@
 #pragma once
+// ZArray：动态数组模板，模拟 Nexon 客户端的 ZArray<T> 容器。
+// 支持分配、扩容、插入、删除及迭代等操作，内存由 ZAllocEx 管理。
 #include "ZAllocEx.h"
 //credits to the creators of https://github.com/MapleStory-Archive/MapleClientEditTemplate
 template <typename T>

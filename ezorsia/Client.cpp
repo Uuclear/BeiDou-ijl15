@@ -1,8 +1,14 @@
+// Client.cpp
+// BeiDou-ijl15 客户端补丁实现。
+// 通过 Memory 类对 MapleStory v83 客户端进程进行内存写入与 Code Cave 注入，
+// 实现分辨率、属性上限、中文本地化、商城/交易中心居中等功能。
 #include "stdafx.h"
 #include "AddyLocations.h"
 #include "codecaves.h"
 #include "FixIme.h"
 #include "FixBuddy.h"
+
+// --- 静态配置成员默认值（运行时由 config.ini 覆盖）---
 
 int Client::m_nGameHeight = 720; // 游戏窗口高度
 int Client::m_nGameWidth = 1280; // 游戏窗口宽度
@@ -29,6 +35,8 @@ int Client::serverIP_Port = 8484; // 服务器端口
 bool Client::talkRepeat = false; // 重复说话
 int Client::talkTime = 2000; // 说话间隔时间
 
+// 启动期核心补丁：UAC 提权字符串、服务器 IP/端口、属性/速度上限、中文换行修复等。
+// 在分辨率调整之前调用，修改的是与窗口尺寸无关的全局常量。
 void Client::UpdateGameStartup() {
 	//Memory::CodeCave(cc0x0044E550, dw0x0044E550, dw0x0044E550Nops); //run from packed client //skip //sub_44E546
 	//Memory::CodeCave(cc0x0044E5BE, dw0x0044E5BE, dw0x0044E5BENops); //run from packed client //skip
@@ -171,6 +179,8 @@ void Client::UpdateGameStartup() {
 	Memory::WriteByte(0x0068E709 + 1, 0x86);
 }
 
+// 分辨率与 UI 布局主入口：根据 m_nGameWidth/Height 批量改写硬编码坐标，
+// 并注入 Code Cave 修正状态栏、商城、交易中心、登录框、Boss 条等控件位置。
 void Client::UpdateResolution() {
 	nStatusBarY = Client::m_nGameHeight - 578;
 
@@ -716,7 +726,8 @@ void Client::UpdateResolution() {
 	Memory::CodeCave(darkMap3cc, 0x0055C1C5, 13);
 }
 
-void Client::EnableNewIGCipher() {//??not called //no idea what cipher is
+// 将自定义 IGCipher 哈希写入客户端多处解密相关常量（当前未被 DllMain 调用）。
+void Client::EnableNewIGCipher() {
 	const int nCipherHash = m_nIGCipherHash;
 	Memory::WriteInt(dwIGCipherHash + 3, nCipherHash);
 	Memory::WriteInt(dwIGCipherVirtual1 + 3, nCipherHash);
@@ -725,7 +736,8 @@ void Client::EnableNewIGCipher() {//??not called //no idea what cipher is
 	Memory::WriteInt(dwIGCipherDecryptStr + 3, nCipherHash);
 }
 
-void Client::UpdateLogin() {	//un-used //may still contain some useful addresses for custom login
+// 自定义登录界面控件位置与配色（当前未启用，保留地址供二次开发参考）。
+void Client::UpdateLogin() {
 	Memory::CodeCave(PositionLoginDlg, dwLoginCreateDlg, 14);
 	Memory::CodeCave(PositionLoginUsername, dwLoginUsername, 11);
 	Memory::CodeCave(PositionLoginPassword, dwLoginPassword, 8);
@@ -740,10 +752,12 @@ void Client::UpdateLogin() {	//un-used //may still contain some useful addresses
 	Memory::WriteByte(dwLoginWebRegisterBtn + 1, -127); // x-pos
 }
 
+// 修复高分辨率下鼠标滚轮导致镜头异常缩放的问题。
 void Client::FixMouseWheel() {
 	Memory::CodeCave(fixMouseWheelHook, 0x009E8090, 5);
 }
 
+// 中文环境适配：根据 imeType 选择旧/新 IME Hook，并可选启用 SwitchChinese 本地化补丁。
 void Client::Chinese() {
 	if (Client::imeType == 0)
 	{
@@ -771,6 +785,7 @@ void Client::Chinese() {
 	}
 }
 
+// 将快捷栏从默认 8 键扩展至 26 键：修改绘制范围、数组容量、按键映射及相关 Code Cave。
 void Client::LongQuickSlot() {
 	// CUIStatusBar::OnCreate
 	Memory::WriteByte(0x008D155C + 1, 0xF0); // Draw rest of quickslot bar
@@ -855,6 +870,7 @@ void Client::LongQuickSlot() {
 	Memory::CodeCave(Restore_Array_Expanded, 0x008CFDFD, 6); //restores the skill array to 0s
 }
 
+// 中文模式下通过 Code Cave 修正道具有效期等日期的显示顺序（StringPool 5273/655/679/3138）。
 void Client::FixDateFormat() {
 	if (SwitchChinese)
 	{
@@ -865,6 +881,7 @@ void Client::FixDateFormat() {
 	}
 }
 
+// 中文模式下修正物品类型名称获取逻辑，避免 Eqp/Etc/Use 汉化后崩溃或无声。
 void Client::FixItemType() {
 	if (SwitchChinese)
 	{
@@ -875,6 +892,7 @@ void Client::FixItemType() {
 
 DWORD Client::jumpCap = 123;
 
+// 写入自定义跳跃上限，并按配置设置攀爬速度（手动倍率或自动 Hook）。
 void Client::JumpCap() {
 	Memory::CodeCave(customJumpCapHook1, 0x00780797, 10);
 	Memory::CodeCave(customJumpCapHook2, 0x008C42A3, 10);
@@ -891,14 +909,15 @@ void Client::JumpCap() {
 	}
 }
 
+// 通过 Code Cave 修正聊天框内文字垂直位置，避免收起聊天栏时信息过于偏下。
 void Client::FixChatPosHook() {
-	// 修复聊天窗里的聊天信息偏下的问题
 	// Memory::WriteByte(0x008DD05A + 2, 0x4);
 	// Memory::WriteByte(0x008DD067 + 2, 0x3);
 	// 老方法导致收起聊天框时，显示的信息太偏下了
 	Memory::CodeCave(chatTextPos, 0x008DD06F, 6);
 }
 
+// debug + noPassword 同时开启时，NOP 密码校验相关逻辑（需服务端配合免密）。
 void Client::NoPassword() {
 	if (noPassword && debug)
 	{
@@ -906,6 +925,7 @@ void Client::NoPassword() {
 	}
 }
 
+// 杂项补丁集合：装备职业需求偏移、发包冷却、大数值属性面板布局、喇叭上限、窗口边界等。
 void Client::MoreHook() {
 	Memory::WriteInt(0x009A3D81, 480);
 	Memory::WriteByte(0x008EC4A7 + 1, 0x23);//装备属性页面的职业需求偏移战士
@@ -943,10 +963,10 @@ void Client::MoreHook() {
 	Memory::WriteInt(0x0049D268 + 1, m_nGameHeight - 16);// 窗口保存位置边界 y
 }
 
+// 解除世界大地图节点数量上限，并按当前分辨率将大地图 UI 居中显示。
 void Client::WorldMap()
 {
-
-	//解除世界大地图限制
+	// 解除世界大地图节点数量限制
 	// WorldMap Cap Increase
 	Memory::WriteByteArray(0x009EA030, world_cap_increase_array, sizeof(world_cap_increase_array));
 	//Memory::WriteByte(0x009EA032, 0xFF);//map

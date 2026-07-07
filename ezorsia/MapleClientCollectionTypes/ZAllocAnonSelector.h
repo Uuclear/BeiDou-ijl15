@@ -1,4 +1,7 @@
 #pragma once
+// ZAllocAnonSelector：ZAllocEx 的匿名内存池块大小选择器。
+// 根据 BLOCK_SIZE 索引返回对应的块大小与每批分配块数量。
+// 用于通用（非字符串）对象的内存池分配策略。
 #include "ZAllocBase.h"
 //credits to the creators of https://github.com/MapleStory-Archive/MapleClientEditTemplate
 struct ZAllocAnonSelector

@@ -1,4 +1,6 @@
 #pragma once
+// ZRefCountedDummy：为非 ZRefCounted 类型提供的包装类，嵌入实际对象 t。
+// 同时继承 ZRefCounted 与 ZRecyclable，使 ZRef 可管理任意类型。
 #include "ZRefCounted.h"
 #include "ZRecyclable.h"
 #include "ZRecyclableAvBuffer.h"

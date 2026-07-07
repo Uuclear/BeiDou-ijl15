@@ -1,4 +1,6 @@
 #pragma once
+// ZMap：哈希映射模板，键值对存储在可回收的 _PAIR 节点中。
+// 支持查找、插入、删除等操作，节点内存由 ZRecyclable 管理。
 #include "ZRecyclable.h"
 //credits to the creators of https://github.com/MapleStory-Archive/MapleClientEditTemplate
 template <typename T, typename U, typename V>

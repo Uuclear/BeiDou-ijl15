@@ -1,4 +1,7 @@
-// dllmain.cpp : Defines the entry point for the DLL application.
+// dllmain.cpp
+// BeiDou-ijl15 项目 DLL 主入口。
+// 本 DLL 以 ijl15.dll 代理形式注入 MapleStory 客户端进程，在 DllMain 中
+// 读取 config.ini、安装各类 Hook，并调用 Client/Memory 等模块完成补丁初始化。
 #include "stdafx.h"
 #include "NMCO.h"
 #include "ijl15.h"
@@ -8,9 +11,9 @@
 #include "BossHP.h"
 #include "HpMpAlert.h"
 
-// config.ini can use IP or hostname (ServerIP_Address=...).
-// The patch expects an IPv4 dotted string; resolve hostnames to IPv4.
-// On failure, fall back to the original value.
+// config.ini 中 ServerIP_Address 可填写 IP 或域名。
+// 客户端内存补丁需要 IPv4 点分十进制字符串，此处将域名解析为 IPv4；
+// 解析失败时原样返回输入值。
 static std::string ResolveToIpv4String(const std::string& hostOrIp)
 {
 	if (hostOrIp.empty()) return hostOrIp;
@@ -51,19 +54,22 @@ static std::string ResolveToIpv4String(const std::string& hostOrIp)
 	return std::string(ipStr);
 }
 
+// 分配调试控制台并将 stdout 重定向到控制台，便于开发时输出日志。
 void CreateConsole() {
 	AllocConsole();
 	FILE* stream;
 	freopen_s(&stream, "CONOUT$", "w", stdout); //CONOUT$
 }
 
+// Windows DLL 标准入口。仅在 DLL_PROCESS_ATTACH 时执行完整初始化流程。
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved)
 {
 	switch (ul_reason_for_call) {
 	case DLL_PROCESS_ATTACH:
 	{
-		//CreateConsole();	//console for devs, use this to log stuff if you want
+		//CreateConsole();	// 开发调试用，取消注释可启用控制台日志
 
+		// --- 阶段 1：从 config.ini 加载配置到 Client / Memory 静态成员 ---
 		INIReader reader("config.ini");
 		if (reader.ParseError() == 0) {
 			Client::m_nGameWidth = reader.GetInteger("general", "width", 1280);
@@ -97,6 +103,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 			Client::talkTime = reader.GetInteger("optional", "talkTime", 2000);
 		}
 
+		// --- 阶段 2：安装 API / 游戏函数 Detours Hook ---
 		Hook_CreateMutexA(true); //multiclient //ty darter, angel, and alias!
 		HookCreateWindowExA(true); //default ezorsia
 		HookGetModuleFileName(true); //default ezorsia
@@ -118,6 +125,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 		//Hook_com_ptr_t_IWzProperty__ctor(true);
 		//Hook_com_ptr_t_IWzProperty__dtor(true);
 
+		// --- 阶段 3：应用内存补丁与客户端功能修改 ---
 		Client::UpdateGameStartup();
 
 		std::cout << "Applying resolution " << Client::m_nGameWidth << "x" << Client::m_nGameHeight << std::endl;
@@ -134,12 +142,15 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 		BossHP::Hook();
 		Client::WorldMap();
 		std::cout << "GetModuleFileName hook created" << std::endl;
+
+		// --- 阶段 4：初始化 ijl15 导出函数转发 Hook ---
 		ijl15::CreateHook(); //NMCO::CreateHook();
 		std::cout << "NMCO hook initialized" << std::endl;
 		break;
 	}
 	default: break;
 	case DLL_PROCESS_DETACH:
+		// 进程卸载 DLL 时直接终止进程（避免部分 Hook 未还原导致崩溃）
 		ExitProcess(0);
 	}
 	return TRUE;

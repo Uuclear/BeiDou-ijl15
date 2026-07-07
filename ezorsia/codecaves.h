@@ -1,4 +1,15 @@
 #pragma once
+// ============================================================================
+// codecaves.h - 裸汇编代码洞（Code Cave）补丁函数
+// ============================================================================
+// 定义 __declspec(naked) 内联汇编函数，供 Memory::CodeCave 注入到客户端 exe。
+// 通过在原始指令流中 jmp 到这些函数，修改 push 到栈上的 UI 坐标/尺寸参数，
+// 再 jmp 回原函数继续执行，从而实现高分辨率下的界面布局修正。
+// 对应地址常量见 AddyLocations.h；偏移变量（如 nStatusBarY）在运行时由 Client 模块赋值。
+// ============================================================================
+
+// ===== 状态栏（Status Bar）位置修正代码洞 =====
+// 根据 nStatusBarY 调整聊天状态栏、背景及输入框的垂直坐标
 int nStatusBarY = 0;
 __declspec(naked) void AdjustStatusBar() {
 	__asm {
@@ -27,6 +38,8 @@ __declspec(naked) void AdjustStatusBarInput() {
 	}
 }
 
+// ===== 登录界面控件位置修正代码洞 =====
+// 重设登录对话框、用户名框、密码框的 CreateWnd 坐标参数
 __declspec(naked) void PositionLoginDlg() {
 	__asm {
 		push 0x000000B4
@@ -54,6 +67,9 @@ __declspec(naked) void PositionLoginPassword() {
 		jmp dword ptr[dwLoginPasswordRtn]
 	}
 }
+
+// ===== Boss 血条（BossBar）Y 坐标修正代码洞 =====
+// PositionBossBarY/Y1 修正 Boss 名称绘制；Y2 记录服务器公告是否存在
 __declspec(naked) void PositionBossBarY() {
 	__asm {	//finally working!, originally posted by Angxl
 		//push 22	//modification
@@ -86,6 +102,8 @@ __declspec(naked) void PositionBossBarY2() {
 int myHeight = -(Client::m_nGameHeight - 600) / 2;
 int myWidth = -(Client::m_nGameWidth - 800) / 2;
 
+// ===== 现金商城（Cash Shop）画布与子控件位置修正代码洞 =====
+// CashShopFix 修正主画布；Fix1~8 修正各子面板；FixOnOff/FixPrev 处理开关与预览页
 __declspec(naked) void CashShopFix() {
 	__asm {
 		push    eax //vCanvas //originally posted by shavitash		//fixed
@@ -210,6 +228,8 @@ __declspec(naked) void CashShopFixPrev() {
 	}
 }
 
+// --- 交易中心（ITC）各区域居中偏移 ---
+
 int iHeightOfsetted1 = 0; int iWidthOfsetted1 = 0; int iTopOfsetted1 = 0; int iLeftOfsetted1 = 0;
 int iHeightOfsetted2 = 0; int iWidthOfsetted2 = 0; int iTopOfsetted2 = 0; int iLeftOfsetted2 = 0;
 int iHeightOfsetted3 = 0; int iWidthOfsetted3 = 0; int iTopOfsetted3 = 0; int iLeftOfsetted3 = 0;
@@ -300,6 +320,8 @@ __declspec(naked) void ITCFix8() {
 	}
 }
 
+// --- 登录界面版本号位置修正 ---
+
 int nTopOfsettedVerFix = 0; int nLeftOfsettedVerFix = 0;
 
 __declspec(naked) void VersionNumberFix() {
@@ -347,6 +369,8 @@ __declspec(naked) void AlwaysViewRestoreFix() {
 //		retn 4
 //	}
 //}
+
+// --- 登录界面背景画布与世界选择按钮位置修正 ---
 
 int nHeightOfsettedLoginBackCanvasFix = 0; int nWidthOfsettedLoginBackCanvasFix = 0;
 int nTopOfsettedLoginBackCanvasFix = 0; int nLeftOfsettedLoginBackCanvasFix = 0;
@@ -418,6 +442,8 @@ __declspec(naked) void ccLoginDescriptorFix() {
 	}
 }
 
+// --- 获取物品/经验提示消息数量与淡出效果 ---
+
 int MoreGainMsgsOffset = 6;
 
 __declspec(naked) void ccMoreGainMsgs() {
@@ -446,6 +472,8 @@ __declspec(naked) void ccMoreGainMsgsFade1() {
 		jmp dword ptr[dwMoreGainMsgsFade1Retn]
 	}
 }
+
+// --- Murueng RAID（武陵道场）活动 UI 各控件位置偏移 ---
 
 int yOffsetOfMuruengraidPlayer = 50; int xOffsetOfMuruengraidPlayer = 169;
 
@@ -976,6 +1004,8 @@ __declspec(naked) void testingCodeCave4() {
 }
 
 
+// --- 鼠标滚轮缩放修正：拦截 WM_MOUSEWHEEL 并限制镜头缩放 ---
+
 DWORD fixMouseWheelAddr = 0x009E8090;
 DWORD fixMouseWheelRetJmpAddr = 0x009E809F;
 DWORD fixMouseWheelCallSetCursorPosAddr = 0x0059A0CB;
@@ -1317,6 +1347,7 @@ _declspec(naked) void Restore_Array_Expanded() //Thank you Max
 }
 // 长键盘结束
 
+// --- 中文日期格式修正（年-月-日 顺序）---
 
 DWORD fixDateFormatRtnAddr = 0x008EBF65;
 __declspec(naked) void fixDateFormat() {
@@ -1402,6 +1433,8 @@ __declspec(naked) void getItemType2() {
 		jmp getItemType2RtnAddr
 	}
 }
+
+// --- 自定义跳跃上限：将 cmp 阈值替换为 Client::jumpCap ---
 
 const DWORD back1 = 0x007807A1;
 __declspec(naked) void customJumpCapHook1()
@@ -1546,6 +1579,8 @@ __declspec(naked) void apDetailBtn()
 	}
 }
 
+// --- 暗图（关灯地图）遮罩圆心位置，随分辨率居中 ---
+
 int darkCircleX;
 int darkCircleY;
 constexpr DWORD darkMap1ccRtn = 0x0055BEEF;
@@ -1623,6 +1658,8 @@ void calcCharLen(const char* word)
 		}
 	}
 }
+
+// --- 技能 Tooltip 中文换行：按实际字符长度计算行宽 ---
 
 constexpr DWORD skillToolTipNewRtn = 0x008F3844;
 __declspec(naked) void skillToolTipNew()

@@ -1,8 +1,13 @@
 #pragma once
+// FixIme — 中文 IME 修复
+// 解决非输入法状态下“卡门”、剪贴板/聊天中文、角色名检测等问题；
+// 提供 HookOld（旧 Win10）与 HookNew（Win10 后期/Win11）两套 IME 切换方案。
+
 #include <imm.h>
 #pragma comment(lib, "imm32.lib")
 
-void EnableIme() { // 目前没有用到这个方法，未测试效果
+// 将前台窗口重新关联 IME 上下文（当前未使用，效果未验证）
+void EnableIme() {
 	HWND hwnd = GetForegroundWindow(); // 获取当前前台窗口的句柄
 	if (hwnd) {
 		// 获取输入法上下文
@@ -15,6 +20,7 @@ void EnableIme() { // 目前没有用到这个方法，未测试效果
 	}
 }
 
+// 解除前台窗口的 IME 关联（密码框等场景禁用输入法）
 void DisableIme() {
 	HWND hwnd = GetForegroundWindow(); // 获取当前前台窗口的句柄
 	if (hwnd) {
@@ -28,14 +34,15 @@ void DisableIme() {
 	}
 }
 
-BYTE enabled = 1;
+BYTE enabled = 1; // 标记当前是否已启用 IME，destroyWindow 时据此决定是否 DisableIme
 
-DWORD funcEnableImeAddr = 0x009E85F3;
+DWORD funcEnableImeAddr = 0x009E85F3; // 客户端 EnableIme(bool) 函数
 
+// --- HookOld 专用：CCtrlEdit 单行输入 OnSetFocus 分支修正 ---
 DWORD setOnFocusFirstJudgementRtnAddr = 0x004CA061;
 DWORD switchImeAddr = 0x004CA078;
+// 原逻辑会跳过 IME 切换；此处强制跳至 switchIme 路径
 __declspec(naked) void setOnFocusFirstJudgement() {
-	// 这里原函数会直接跳过切换IME的地方，我们要让他跳到切换IME的地方
 	__asm {
 		cmp[esp + 0Ch], edi
 		jz label_jmp_switch_ime
@@ -48,6 +55,7 @@ __declspec(naked) void setOnFocusFirstJudgement() {
 
 DWORD enableRtnAddr = 0x004CA08F;
 DWORD disableRtnAddr = 0x004CA091;
+// HookOld：按焦点与 esi+0x80 标志决定 enable/disable IME
 __declspec(naked) void switchIme() {
 	__asm {
 		cmp [esp + 0Ch], edi
@@ -67,6 +75,7 @@ __declspec(naked) void switchIme() {
 	}
 }
 
+// HookOld：CCtrlMLEdit 多行输入 OnSetFocus IME 切换
 DWORD enableMLRtnAddr = 0x004D32E0;
 DWORD disableMLRtnAddr = 0x004D32E2;
 __declspec(naked) void switchMLIme() {
@@ -85,10 +94,12 @@ __declspec(naked) void switchMLIme() {
 	}
 }
 
+// --- HookNew 专用：重写单行 IME 逻辑，Win11 下 HookOld 的 switchIme 失效 ---
 DWORD newSwitchImeRtnAddr = 0x004CA08F;
+// esi+0x80==1 为密码框 → DisableIme；否则 push 1 启用 IME
 __declspec(naked) void newSwitchIme() {
 	__asm {
-		cmp[esi + 0x80], 1 // 判断是否密码框
+		cmp[esi + 0x80], 1 // 密码框标志
 		jz label_disable
 		push 1
 		call funcEnableImeAddr
@@ -101,6 +112,7 @@ __declspec(naked) void newSwitchIme() {
 	}
 }
 
+// 控件销毁时若 enabled 则 DisableIme，防止 IME 残留（HookOld/HookNew 共用）
 DWORD destroyWindowRtnAddr = 0x004DFEAD;
 DWORD destroyWindowFuncAddr = 0x0041FE69;
 __declspec(naked) void destroyWindow() {
@@ -119,6 +131,7 @@ __declspec(naked) void destroyWindow() {
 	}
 }
 
+// HookNew：多行输入一律 push 1 启用 IME（简化原 switchMLIme 分支）
 DWORD newSwitchMLImeRtnAddr = 0x004D32EE;
 __declspec(naked) void newSwitchMLIme() {
 	__asm {
@@ -132,47 +145,35 @@ __declspec(naked) void newSwitchMLIme() {
 
 class FixIme {
 public:
+	// HookOld — 适用于较旧 Win10
+	// 修正 CCtrlEdit/CCtrlMLEdit 的 OnSetFocus IME 分支；已知问题：商城礼物“内容”栏无法调出 IME
 	static void HookOld() {
-		// 适合较旧的win10系统
-		// 已知问题：商城的礼物赠送，填写内容的地方会无法调出IME
-
 		GeneralHook();
-		// 单行输入框OnSetFocus@CCtrlEdit
-		Memory::CodeCave(setOnFocusFirstJudgement, 0x004CA05B, 6);
-		Memory::CodeCave(switchIme, 0x004CA089, 6);
-		// 多行输入框OnSetFocus@CCtrlMLEdit
-		Memory::FillBytes(0x004D32C6, 0x90, 2);
-		Memory::CodeCave(switchMLIme, 0x004D32D9, 7);
-		Memory::CodeCave(destroyWindow, 0x004DFEA4, 9); // 销毁窗口时固定禁用IME
+		Memory::CodeCave(setOnFocusFirstJudgement, 0x004CA05B, 6); // CCtrlEdit::OnSetFocus 前置判断
+		Memory::CodeCave(switchIme, 0x004CA089, 6);               // CCtrlEdit IME 切换
+		Memory::FillBytes(0x004D32C6, 0x90, 2);                   // 去掉 MLEdit 原分支
+		Memory::CodeCave(switchMLIme, 0x004D32D9, 7);             // CCtrlMLEdit IME 切换
+		Memory::CodeCave(destroyWindow, 0x004DFEA4, 9);           // 控件销毁时禁用 IME
 		std::cout << "Old Ime Hook" << std::endl;
 	}
 
+	// HookNew — 适用于 Win10 后期 / Win11（HookOld 在 Win11 失效）
+	// 用 newSwitchIme/newSwitchMLIme 重写单行/多行逻辑；密码框仍通过 esi+0x80 禁用 IME
 	static void HookNew() {
-		// 适合较新的win10系统和win11系统
-		// 由于原来的方法在 win11下失效因此重写了
-
 		GeneralHook();
-		// 单行输入框启用IME
-		Memory::CodeCave(newSwitchIme, 0x004CA089, 6);
-		Memory::CodeCave(destroyWindow, 0x004DFEA4, 9); // 销毁窗口时固定禁用IME
-		//Memory::WriteByte(0x004D32D9 + 1, 1); // 多行输入
-		Memory::CodeCave(newSwitchMLIme, 0x004D32D9, 7); // 多行输入
+		Memory::CodeCave(newSwitchIme, 0x004CA089, 6);            // 单行：非密码框启用 IME
+		Memory::CodeCave(destroyWindow, 0x004DFEA4, 9);
+		Memory::CodeCave(newSwitchMLIme, 0x004D32D9, 7);          // 多行：始终启用 IME
 		std::cout << "New Ime Hook" << std::endl;
-		// 测试
-		// 登录界面 密码禁止调用IME————账号框无法识别，密码框已特殊处理禁用IME了
-		// 平常状态下 输入法可以输入中文，非输入法不卡门————已测试
-		// 商城礼物 日期/标题/内容————生日禁用IME / 标题内容均可调用输入法
-		// 老虎喇叭 多行输入框————可正常输入
 	}
 private:
+	// HookOld/HookNew 共用：NOP 卡门检测、剪贴板中文、角色名中文校验
 	static void GeneralHook() {
-		Memory::FillBytes(0x008D54A6, 0x90, 9); // Key ?
-		Memory::FillBytes(0x00937225, 0x90, 9); // Chat
-		Memory::FillBytes(0x00531EE8, 0x90, 9); // Group Message
-		// 剪贴板支持中文
-		Memory::FillBytes(0x004CAE7D, 0x90, 2);
+		Memory::FillBytes(0x008D54A6, 0x90, 9); // 按键输入非 IME 字符拦截
+		Memory::FillBytes(0x00937225, 0x90, 9); // 聊天输入
+		Memory::FillBytes(0x00531EE8, 0x90, 9); // 群聊消息
+		Memory::FillBytes(0x004CAE7D, 0x90, 2); // 剪贴板粘贴中文
 		Memory::WriteByte(0x004CAE8F, 0xEB);
-		// 角色名中文检测
-		Memory::FillBytes(0x007A015D, 0x90, 2);
+		Memory::FillBytes(0x007A015D, 0x90, 2); // 允许角色名含中文
 	}
 };

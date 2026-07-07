@@ -1,4 +1,7 @@
 #pragma once
+// ZAllocEx：Nexon 客户端核心内存管理模板，结合内存池与 slab 分配。
+// 小对象从池中复用，超大对象直接堆分配；支持单例 GetInstance 与 Alloc/Free。
+// 通过模板参数 T（如 ZAllocAnonSelector）定制不同用途的池策略。
 #include "ZXString.h"
 #include "ZAllocAnonSelector.h"
 #include "ZAllocBase.h"

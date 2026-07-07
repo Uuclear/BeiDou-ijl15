@@ -1,4 +1,6 @@
 #pragma once
+// ZRecyclableAvBuffer：指定类型的可用对象缓冲池，管理 free 链表与分配统计。
+// 单例模式，提供 raw_new/raw_delete 供 ZRecyclable 派生类调用。
 #include "ZRecyclableStatic.h"
 #include "ZFatalSection.h"
 #include "ZAllocEx.h"

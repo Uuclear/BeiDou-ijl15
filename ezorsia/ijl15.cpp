@@ -1,3 +1,7 @@
+// ijl15.cpp — ijl15.dll 注入入口与 API 转发
+// MapleStory 启动时会 LoadLibrary("ijl15.dll")；本 DLL 替代原版并
+// 在 CreateHook 中绑定 2ijl15.dll，导出函数以 naked jmp 转发（须 x86 编译）。
+
 #include "stdafx.h"
 #include "ijl15.h"
 
@@ -8,6 +12,7 @@ FARPROC ijlInit_Proc;
 FARPROC ijlRead_Proc;
 FARPROC ijlWrite_Proc;
 
+// 加载重命名后的原版 ijl15 库并缓存各 API 入口地址
 void ijl15::CreateHook() {
 	HMODULE hModule = LoadLibraryA("2ijl15.dll");
 	if (hModule == nullptr) {
@@ -22,9 +27,10 @@ void ijl15::CreateHook() {
 	ijlWrite_Proc = GetProcAddress(hModule, "ijlWrite");
 }
 
+// 导出符号名与官方 ijl15.dll 一致，内部 jmp 至 2ijl15.dll 对应实现
 extern "C" __declspec(dllexport) __declspec(naked) void ijlGetLibVersion()
 {
-	__asm	jmp dword ptr[ijlGetLibVersion_Proc] // make sure you're compiling in x86
+	__asm	jmp dword ptr[ijlGetLibVersion_Proc] // 须 x86 编译
 }
 
 extern "C" __declspec(dllexport) __declspec(naked) void ijlInit()

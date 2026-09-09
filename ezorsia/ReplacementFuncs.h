@@ -1,9 +1,9 @@
 #pragma once
 #include "AutoTypes.h"
 
-static bool ownLoginFrame;
-static bool ownCashShopFrame;
-static bool EzorsiaV2WzIncluded;
+static bool ownLoginFrame = false;
+static bool ownCashShopFrame = false;
+static bool EzorsiaV2WzIncluded = false;
 //notes from my knowledge as i have not used these kinds of codes practically well
 //function replacement is when you replace the original function in the client with your own fake function, usually to add some extra functionality
 //for more complex applications you would also need to define the client's variables and reinterpret_cast those (no void this time)

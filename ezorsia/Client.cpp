@@ -6,11 +6,11 @@
 
 #include "MapleClientCollectionTypes/ZXString.h"
 
-int Client::m_nGameHeight = 720; // 游戏窗口高度
-int Client::m_nGameWidth = 1280; // 游戏窗口宽度
-int Client::MsgAmount = 26; // 消息显示数量
-bool Client::CustomLoginFrame = true; // 使用自定义登录界面
-bool Client::WindowedMode = true; // 窗口模式
+int Client::m_nGameHeight = 600; // 游戏窗口高度（原版 800×600）
+int Client::m_nGameWidth = 800; // 游戏窗口宽度（原版 800×600）
+int Client::MsgAmount = 10; // 消息显示数量
+bool Client::CustomLoginFrame = false; // 使用自定义登录界面
+bool Client::WindowedMode = true; // 窗口模式（Win10/11 下全屏 DX8 易启动失败）
 bool Client::RemoveLogos = true; // 移除启动Logo
 int Client::setDamageCap = 199999; // 物理伤害上限
 int Client::setMAtkCap = 1999; // 魔法攻击上限
@@ -173,6 +173,27 @@ void Client::UpdateGameStartup() {
 	Memory::WriteByte(0x0068E534 + 1, 0x86);
 	Memory::WriteByte(0x0068E65D + 1, 0x86);
 	Memory::WriteByte(0x0068E709 + 1, 0x86);
+}
+
+// 原版 800×600：仅补丁 Gr2D/视口与窗口模式，不注入宽屏 codecave
+void Client::ApplyNativeResolution() {
+	Memory::WriteInt(dwApplicationHeight + 1, m_nGameHeight);
+	Memory::WriteInt(dwApplicationWidth + 1, m_nGameWidth);
+	Memory::WriteInt(dwCursorVectorVPos + 2, (unsigned int)floor(-m_nGameHeight / 2));
+	Memory::WriteInt(dwCursorVectorHPos + 2, (unsigned int)floor(-m_nGameWidth / 2));
+	Memory::WriteInt(dwUpdateMouseLimitVPos + 1, m_nGameHeight);
+	Memory::WriteInt(dwUpdateMouseLimitHPos + 1, m_nGameWidth);
+	Memory::WriteInt(dwCursorPosLimitVPos + 1, m_nGameHeight);
+	Memory::WriteInt(dwCursorPosLimitHPos + 1, m_nGameWidth);
+	Memory::WriteInt(dwViewPortHeight + 3, m_nGameHeight);
+	Memory::WriteInt(dwViewPortWidth + 3, m_nGameWidth);
+	if (WindowedMode) {
+		unsigned char forced_window[] = { 0xb8, 0x00, 0x00, 0x00, 0x00 };
+		Memory::WriteByteArray(0x009F7A9B, forced_window, sizeof(forced_window));
+	}
+	if (RemoveLogos) {
+		Memory::FillBytes(0x0062EE54, 0x90, 21);
+	}
 }
 
 void Client::UpdateResolution() {

@@ -5,6 +5,7 @@ public:
 	static void UpdateGameStartup();
 	static void EnableNewIGCipher();
 	static void UpdateResolution();
+	static void ApplyNativeResolution();
 	static void UpdateLogin();
 	static void FixMouseWheel();
 	static void Chinese();

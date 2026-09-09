@@ -65,14 +65,15 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 	case DLL_PROCESS_ATTACH:
 	{
 		//CreateConsole();	//console for devs, use this to log stuff if you want
+		// 固定原版分辨率 800×600，不读取 config 中的宽屏相关项
+		Client::m_nGameWidth = 800;
+		Client::m_nGameHeight = 600;
+		EzorsiaV2WzIncluded = false;
+		ownLoginFrame = false;
+		ownCashShopFrame = false;
+
 		INIReader reader("config.ini");
 		if (reader.ParseError() == 0) {
-			Client::m_nGameWidth = reader.GetInteger("general", "width", 1280);
-			Client::m_nGameHeight = reader.GetInteger("general", "height", 720);
-			Client::MsgAmount = reader.GetInteger("general", "MsgAmount", 26);
-			Client::CustomLoginFrame = reader.GetBoolean("general", "CustomLoginFrame", true);
-			Client::WindowedMode = reader.GetBoolean("general", "WindowedMode", true);
-			Client::RemoveLogos = reader.GetBoolean("general", "RemoveLogos", true);
 			Memory::UseVirtuProtect = reader.GetBoolean("general", "UseVirtuProtect", true);
 			Client::setDamageCap = reader.GetReal("optional", "setDamageCap", 199999);
 			Client::setMAtkCap = reader.GetReal("optional", "setMAtkCap", 1999);
@@ -80,16 +81,14 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 			Client::setAvdCap = reader.GetReal("optional", "setAvdCap", 999);
 			Client::setAtkOutCap = reader.GetReal("optional", "setAtkOutCap", 199999);
 			Client::useTubi = reader.GetBoolean("optional", "useTubi", false);
-			Client::bigLoginFrame = reader.GetBoolean("general", "bigLoginFrame", false);
 			Client::SwitchChinese = reader.GetBoolean("general", "SwitchChinese", false);
+			Client::WindowedMode = reader.GetBoolean("general", "WindowedMode", true);
+			Client::RemoveLogos = reader.GetBoolean("general", "RemoveLogos", true);
 			Client::speedMovementCap = reader.GetInteger("optional", "speedMovementCap", 140);
 			Client::jumpCap = reader.GetInteger("optional", "jumpCap", 123);
 			Client::debug = reader.GetBoolean("debug", "debug", false);
 			Client::noPassword = reader.GetBoolean("debug", "noPassword", false);
 			Client::imeType = reader.GetInteger("general", "imeType", 1);
-			ownLoginFrame = reader.GetBoolean("optional", "ownLoginFrame", false);
-			ownCashShopFrame = reader.GetBoolean("optional", "ownCashShopFrame", false);
-			EzorsiaV2WzIncluded = reader.GetBoolean("general", "EzorsiaV2WzIncluded", true);
 			Client::ServerIP_AddressFromINI = ResolveToIpv4String(reader.Get("general", "ServerIP_Address", "127.0.0.1"));
 			Client::serverIP_Port = reader.GetInteger("general", "serverIP_Port", 8484);
 			Client::climbSpeedAuto = reader.GetBoolean("optional", "climbSpeedAuto", false);
@@ -121,12 +120,10 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 		//Hook_com_ptr_t_IWzProperty__dtor(true);
 
 		Client::UpdateGameStartup();
+		Client::ApplyNativeResolution();
 
-		std::cout << "Applying resolution " << Client::m_nGameWidth << "x" << Client::m_nGameHeight << std::endl;
-		Client::UpdateResolution();
 		Client::FixMouseWheel();
 		Client::Chinese();
-		Client::LongQuickSlot();
 		Client::FixDateFormat();
 		Client::FixItemType();
 		Client::JumpCap();
@@ -134,7 +131,6 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 		Client::NoPassword();
 		Client::MoreHook();
 		BossHP::Hook();
-		Client::WorldMap();
 		Client::RefreshRate(); 
 		Client::DeleteChar();
 		std::cout << "GetModuleFileName hook created" << std::endl;

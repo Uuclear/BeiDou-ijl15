@@ -1,38 +1,58 @@
-# 客户端 UI 资源（800×600 原版）
+# 客户端补丁资源（镜像 `Data/` 目录）
 
-本目录存放还原原版分辨率时**已打补丁**的 `.img` 文件，部署到客户端 `Data/UI/` 即可。
+本目录下的 **`Data/`** 与北斗客户端 `Data/` **路径一一对应**。部署时整目录覆盖即可，无需逐个挑文件。
 
-## 文件清单
-
-| 文件 | 大小（约） | 修改内容 |
-|------|-----------|----------|
-| `Data/UI/Login.img` | 7.0 MB | `Common/frame` 改为 **800×600**；`CharSelect/effect/1/0–4` 与 Royals 对齐 |
-| `Data/UI/StatusBar.img` | 117 KB | `base/quickSlot` 改为 **8 格**底图（151×80）；删除 `quickSlot26` / `quickSlot32` |
-
-## 部署
+## 目录结构
 
 ```text
-复制本目录下 Data/UI/*.img → <客户端根目录>/Data/UI/
+client-assets/
+└── Data/
+    ├── UI/
+    │   ├── Login.img          # 800×600 登录框
+    │   └── StatusBar.img      # 8 格快捷栏底图
+    └── Map/
+        └── Obj/
+            └── login.img      # 原版 MapleStory 登录横条 Logo
 ```
 
-部署前建议备份客户端原文件。
+## 文件说明
 
-## 为何只改这两个？
+| 路径 | 大小（约） | 修改内容 |
+|------|-----------|----------|
+| `Data/UI/Login.img` | 7.0 MB | `Common/frame` **800×600**；`CharSelect/effect/1/0–4` 与 Royals 对齐 |
+| `Data/UI/StatusBar.img` | 117 KB | `base/quickSlot` **8 格**；删除 `quickSlot26` / `quickSlot32` |
+| `Data/Map/Obj/login.img` | 4.9 MB | `Title/logo/0/0`、`0/1` 原版 **MapleStory** 横条（自 `MapleStory/Map.wz` 导出） |
 
-北斗客户端此前为宽屏（1280×720）改过 UI：`Login.img` 的登录框是 1280 宽，`StatusBar.img` 带 26 格快捷栏素材。  
-DLL 还原 **800×600** 且关闭 `LongQuickSlot` 后，若不换资源会出现：
+## 部署（推荐：整目录覆盖）
 
-- 登录框比例/裁切异常
-- 底部快捷栏底图与 8 格布局不匹配
+部署前请关闭游戏 / Harepacker，并备份客户端 `Data/`。
 
-`CashShop.img`、`UIWindow.img` 等**未修改**——800×600 下由原版客户端资源即可正常显示。
+```powershell
+# 将本仓库 client-assets/Data 合并覆盖到客户端 Data（保留客户端其它未列出的文件）
+robocopy ".\client-assets\Data" "<客户端根目录>\Data" /E /XO
 
-## 能否不修改？
+# 或 PowerShell：
+Copy-Item ".\client-assets\Data\*" "<客户端根目录>\Data\" -Recurse -Force
+```
 
-| 场景 | 是否需要改 IMG |
-|------|----------------|
-| 继续用宽屏 + `LongQuickSlot`（1280×720） | **不需要**，用客户端原有宽屏资源 |
-| DLL 固定 800×600 + 关闭长快捷键 | **需要**（本目录资源，或自行用 ImgPatch 生成） |
-| 客户端从未打过宽屏 UI 补丁 | **不需要**，用原始 `Login.img` / `StatusBar.img` 即可 |
+只会覆盖上表三个 `.img`；`Data` 下其它子目录（Character、Item 等）不受影响。
 
-生成工具：`steps/tools/ImgPatch`（仓库外，见主项目 `Maple/steps/`）。
+## 背景说明
+
+北斗客户端曾为宽屏改过 UI；DLL 固定 **800×600** 且关闭 `LongQuickSlot` 后需要上述资源：
+
+- 登录框比例（`Login.img`）
+- 底部 8 格快捷栏（`StatusBar.img`）
+- 登录横条 Logo 在 **`Map/Obj/login.img`**（不是 `UI/Login.img/Title/MSTitle`）
+
+`CashShop.img`、`UIWindow.img` 等未收录——800×600 下用客户端原版即可。
+
+源 PNG / 打补丁工具：`BeiDou-ijl15-resources/login-banner-scan/vanilla-export/`、`steps/tools/ImgCanvasPatch`、`steps/tools/ImgPatch`。
+
+## 是否需要这些资源？
+
+| 场景 | 是否需要 |
+|------|----------|
+| 宽屏 + `LongQuickSlot`（1280×720） | 否 |
+| DLL 800×600 + 关闭长快捷键 | 是（本目录或自行 ImgPatch） |
+| 客户端从未打宽屏 UI 补丁 | 仅 `login.img` Logo 可选 |

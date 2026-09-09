@@ -2120,7 +2120,7 @@ bool Hook_StringPool__GetString(bool bEnable)	//hook stringpool modification //t
 		auto ret = _StringPool__GetString(pThis, edx, result, nIdx, formal);
         if (nIdx == 1163)
         {
-            *ret = "BeiDou";
+            *ret = "MapleStory";
         }
 		switch (nIdx)
 		{

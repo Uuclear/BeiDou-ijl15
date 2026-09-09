@@ -2118,10 +2118,6 @@ bool Hook_StringPool__GetString(bool bEnable)	//hook stringpool modification //t
 	_StringPool__GetString_t _StringPool__GetString_Hook = [](void* pThis, void* edx, ZXString<char>* result, unsigned int nIdx, char formal) ->  ZXString<char>*
 	{
 		auto ret = _StringPool__GetString(pThis, edx, result, nIdx, formal);
-        if (nIdx == 1163)
-        {
-            *ret = "MapleStory";
-        }
 		switch (nIdx)
 		{
 			case 1307:	//1307_UI_LOGINIMG_COMMON_FRAME = 51Bh
@@ -2155,7 +2151,7 @@ bool Hook_StringPool__GetString(bool bEnable)	//hook stringpool modification //t
 				if (Client::SwitchChinese)
 				{
 					for (const auto& pair : newKeyValuePairs) {
-						if (nIdx == pair.key) {
+						if (nIdx == pair.key && pair.key != 1163) {
 							*ret = pair.value.c_str();
 							break;
 						}
@@ -2163,6 +2159,8 @@ bool Hook_StringPool__GetString(bool bEnable)	//hook stringpool modification //t
 				}
 				break;
 		}
+		if (nIdx == 1163)
+			*ret = "MapleStory";
 		return ret;
 	};
 	return Memory::SetHook(bEnable, reinterpret_cast<void**>(&_StringPool__GetString), _StringPool__GetString_Hook);

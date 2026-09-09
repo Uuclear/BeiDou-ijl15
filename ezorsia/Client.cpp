@@ -12,6 +12,7 @@ int Client::MsgAmount = 10; // 消息显示数量
 bool Client::CustomLoginFrame = false; // 使用自定义登录界面
 bool Client::WindowedMode = true; // 窗口模式（Win10/11 下全屏 DX8 易启动失败）
 bool Client::RemoveLogos = true; // 移除启动Logo
+bool Client::HideSlideNotice = true; // 隐藏顶部滚动公告
 int Client::setDamageCap = 199999; // 物理伤害上限
 int Client::setMAtkCap = 1999; // 魔法攻击上限
 int Client::setAccCap = 999; // 命中上限
@@ -19,7 +20,6 @@ int Client::setAvdCap = 999; // 回避上限
 double Client::setAtkOutCap = 199999; // 输出显示上限
 bool Client::useTubi = false; // 使用Tubi功能
 bool Client::bigLoginFrame = false; // 大型登录框
-bool Client::SwitchChinese = false; // 切换中文模式
 int Client::speedMovementCap = 140; // 移动速度上限
 bool Client::noPassword = false; // 无密码模式
 bool Client::debug = false; // 调试模式
@@ -779,26 +779,24 @@ void Client::Chinese() {
 	}
 
 	FixBuddy::Hook();
-	if(SwitchChinese) {
-		//创建角色界面女
-		Memory::WriteString(0x00AF6D1C, "  女  ");
-		//创建角色界面男
-		Memory::WriteString(0x00AF6D24, " 男 ");
+	//创建角色界面女
+	Memory::WriteString(0x00AF6D1C, "  女  ");
+	//创建角色界面男
+	Memory::WriteString(0x00AF6D24, " 男 ");
 
-		// 聊天栏选项
-		Memory::WriteString(0x00AF2B28, "对联盟     ");
+	// 聊天栏选项
+	Memory::WriteString(0x00AF2B28, "对联盟     ");
 
-		// 有效期字体大小
-		Memory::WriteByte(0x008E55ED + 1, 0x0B);
+	// 有效期字体大小
+	Memory::WriteByte(0x008E55ED + 1, 0x0B);
 
-		// 属性位置字体大小
-		Memory::WriteByte(0x008E557A + 1, 0x0B);
-		Memory::WriteByte(0x008E565E + 1, 0x0B);
+	// 属性位置字体大小
+	Memory::WriteByte(0x008E557A + 1, 0x0B);
+	Memory::WriteByte(0x008E565E + 1, 0x0B);
 
-		// 玩家名片 职业字体大小和位置
-		Memory::WriteByte(0x0090142E + 1, 0x5E); // 60->5E 位置上移
-		Memory::WriteByte(0x00901400 + 1, 1); // 字体type改为1 对应12号大小
-	}
+	// 玩家名片 职业字体大小和位置
+	Memory::WriteByte(0x0090142E + 1, 0x5E); // 60->5E 位置上移
+	Memory::WriteByte(0x00901400 + 1, 1); // 字体type改为1 对应12号大小
 }
 
 void Client::LongQuickSlot() {
@@ -886,21 +884,15 @@ void Client::LongQuickSlot() {
 }
 
 void Client::FixDateFormat() {
-	if (SwitchChinese)
-	{
-		Memory::CodeCave(fixDateFormat, 0x008EBF57, 14); // StringPool 5273
-		Memory::CodeCave(fixDateFormat2, 0x008EBFA1, 14); // StringPool 655
-		Memory::CodeCave(fixDateFormat3, 0x008EC31A, 14); // StringPool 679
-		Memory::CodeCave(fixDateFormat4, 0x008EBF05, 14); // StringPool 3138
-	}
+	Memory::CodeCave(fixDateFormat, 0x008EBF57, 14); // StringPool 5273
+	Memory::CodeCave(fixDateFormat2, 0x008EBFA1, 14); // StringPool 655
+	Memory::CodeCave(fixDateFormat3, 0x008EC31A, 14); // StringPool 679
+	Memory::CodeCave(fixDateFormat4, 0x008EBF05, 14); // StringPool 3138
 }
 
 void Client::FixItemType() {
-	if (SwitchChinese)
-	{
-		Memory::CodeCave(getItemType1, 0x005CFA99, 15);
-		Memory::CodeCave(getItemType2, getItemType2Addr, 27);
-	}
+	Memory::CodeCave(getItemType1, 0x005CFA99, 15);
+	Memory::CodeCave(getItemType2, getItemType2Addr, 27);
 }
 
 DWORD Client::jumpCap = 123;

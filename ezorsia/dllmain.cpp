@@ -8,6 +8,7 @@
 #include "BossHP.h"
 #include "HpMpAlert.h"
 #include "SelectCharMacFix.h"
+#include "HideSlideNotice.h"
 #pragma comment(lib, "ws2_32.lib")
 
 // config.ini can use IP or hostname (ServerIP_Address=...).
@@ -81,9 +82,9 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 			Client::setAvdCap = reader.GetReal("optional", "setAvdCap", 999);
 			Client::setAtkOutCap = reader.GetReal("optional", "setAtkOutCap", 199999);
 			Client::useTubi = reader.GetBoolean("optional", "useTubi", false);
-			Client::SwitchChinese = reader.GetBoolean("general", "SwitchChinese", false);
 			Client::WindowedMode = reader.GetBoolean("general", "WindowedMode", true);
 			Client::RemoveLogos = reader.GetBoolean("general", "RemoveLogos", true);
+			Client::HideSlideNotice = reader.GetBoolean("general", "HideSlideNotice", true);
 			Client::speedMovementCap = reader.GetInteger("optional", "speedMovementCap", 140);
 			Client::jumpCap = reader.GetInteger("optional", "jumpCap", 123);
 			Client::debug = reader.GetBoolean("debug", "debug", false);
@@ -121,6 +122,9 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 
 		Client::UpdateGameStartup();
 		Client::ApplyNativeResolution();
+		if (Client::HideSlideNotice) {
+			HideSlideNotice::Hook();
+		}
 
 		Client::FixMouseWheel();
 		Client::Chinese();

@@ -2148,13 +2148,10 @@ bool Hook_StringPool__GetString(bool bEnable)	//hook stringpool modification //t
 			//case 5361:	//SP_1937_UI_UIWINDOWIMG_STAT_BACKGRND2  = 791h	
 			//	if (EzorsiaV2WzIncluded && ownCashShopFrame) { *ret = ("UI/MapleEzorsiaV2wzfiles.img/Base/backgrnd2"); } break;
 			default:
-				if (Client::SwitchChinese)
-				{
-					for (const auto& pair : newKeyValuePairs) {
-						if (nIdx == pair.key && pair.key != 1163) {
-							*ret = pair.value.c_str();
-							break;
-						}
+				for (const auto& pair : newKeyValuePairs) {
+					if (nIdx == pair.key && pair.key != 1163) {
+						*ret = pair.value.c_str();
+						break;
 					}
 				}
 				break;

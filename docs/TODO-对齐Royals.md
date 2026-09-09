@@ -1,6 +1,7 @@
 # Royals 对齐 — 待办清单
 
 > **工作方式**：从上到下逐项做；**每完成一项 → 测试 → `git commit` 一次**（只提交该项相关文件）。  
+> **提交说明**：commit message **一律用中文**（例如：`fix: 窗口标题改为 MapleStory（T04）`）。
 > **分支**：`feature/native-800x600`  
 > **资源部署**：合并进 `client-assets/Data/`，客户端用 `robocopy client-assets\Data <客户端>\Data /E /XO`
 
